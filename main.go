@@ -33,9 +33,6 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", connErr)
 	}
 
-	// Setup authentication providers
-	config.SetupProviders()
-
 	router := routing.SetupRouter(env)
 
 	router.Use(sessions.Sessions("mysession", env.CookieStore))

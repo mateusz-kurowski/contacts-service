@@ -9,3 +9,7 @@ go test -tags=integration -v ./...
 For detailed Swagger docs visit:
 
 `http://localhost:33500/swagger/index.html`
+
+### Board
+
+<https://app.plane.so/contactsai/>
