@@ -1,0 +1,22 @@
+meta {
+  name: Update contact
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{url}}/contacts/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "phone":"513 604 082",
+    "name":"test"
+  }
+}

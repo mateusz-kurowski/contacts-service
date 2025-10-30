@@ -1,0 +1,18 @@
+meta {
+  name: Create contact
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/contacts
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "phone":"123123123",
+    "name":"test"
+  }
+}

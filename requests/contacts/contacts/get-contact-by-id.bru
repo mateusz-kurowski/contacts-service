@@ -1,0 +1,15 @@
+meta {
+  name: Get contact by id
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/api/contacts/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}

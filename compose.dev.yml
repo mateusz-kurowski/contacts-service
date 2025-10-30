@@ -1,0 +1,20 @@
+include:
+  - ./authentik/compose.yml
+services:
+  contacts_db:
+    image: postgres:18
+    env_file:
+      - .env
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'",
+        ]
+    ports:
+      - "${POSTGRES_DB_PORT}:5432"
+    volumes:
+      - contacts_db_data:/var/lib/postgresql/18/docker
+
+volumes:
+  contacts_db_data:

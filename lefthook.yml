@@ -1,0 +1,20 @@
+pre-commit:
+  parallel: true
+  commands:
+    format-backend:
+      glob: "*.go"
+      run: gofmt -w {staged_files}
+      stage_fixed: true
+
+    test-backend-unit:
+      glob: "*.go"
+      run: go test -short -timeout=10s ./...
+
+pre-push:
+  parallel: true
+  commands:
+    test-backend-integration:
+      run: go test -tags=integration -timeout=30s ./...
+
+    test-backend-all:
+      run: go test -timeout=60s ./...
