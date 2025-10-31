@@ -6,6 +6,11 @@ pre-commit:
       run: gofmt -w {staged_files}
       stage_fixed: true
 
+    lint-backend:
+      glob: "*.go"
+      run: golangci-lint run ./... # golangci-lint does not support separate (staged) files here from different modules
+      stage_fixed: true
+
     test-backend-unit:
       glob: "*.go"
       run: go test -short -timeout=10s ./...

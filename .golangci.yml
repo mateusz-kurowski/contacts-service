@@ -443,6 +443,8 @@ linters:
   exclusions:
     # Log a warning if an exclusion rule is unused.
     # Default: false
+    paths:
+      - 'docs/'
     warn-unused: true
     # Predefined exclusion rules.
     # Default: []
