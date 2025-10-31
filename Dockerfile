@@ -1,18 +1,20 @@
-FROM sqlc/sqlc:latest AS sqlc
-WORKDIR /app
-COPY sqlc.yml ./
-COPY db/ ./db/
-RUN sqlc generate
+FROM sqlc/sqlc:latest AS sqlc_binary
 
 FROM golang:1.25-alpine AS builder
 
+COPY --from=sqlc_binary /workspace/sqlc /usr/local/bin/sqlc
+
 WORKDIR /app
+
+COPY sqlc.yml .
+COPY sql/ ./sql/
+RUN sqlc generate
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-COPY --from=sqlc /app/db ./db
+
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s -extldflags "-static"' \

@@ -1,6 +1,15 @@
+.vscode/
+.github/
+.git/
+requests/
 tmp/
-Dockerfile
+
+.env.example
 .gitignore
+.golangci.yml
+compose.dev.yml
+Dockerfile
+
+lefthook.yml
 README.md
-env/
 todo.md
