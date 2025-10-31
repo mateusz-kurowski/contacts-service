@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: mateusz-kurowski/contacts-service
+      - uses: mateusz-kurowski/setup-go-env-action-composite
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
@@ -23,24 +23,40 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: mateusz-kurowski/contacts-service
-        with:
-          go-version: "1.25"
-          cache-dependency-path: go.sum
-
+      - uses: mateusz-kurowski/setup-go-env-action-composite
       - name: Run tests
         run: go test ./...
 
   integration-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: mateusz-kurowski/contacts-service
+      - uses: mateusz-kurowski/setup-go-env-action-composite
       - name: Run integration tests
         run: go test -tags=integration -v ./...
 
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: mateusz-kurowski/contacts-service      
+      - uses: mateusz-kurowski/setup-go-env-action-composite      
+      - name: Install dependencies
+        run: go get .
       - name: Build
-        run: go build .
+        run: go build -v ./...
+      -
+        name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      -
+        name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: mateuszkurowski/contacts-service:latest
