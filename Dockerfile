@@ -1,4 +1,4 @@
-FROM sqlc/sqlc:latest AS sqlc_binary
+FROM sqlc/sqlc:1.30.0 AS sqlc_binary
 
 FROM golang:1.25-alpine AS builder
 

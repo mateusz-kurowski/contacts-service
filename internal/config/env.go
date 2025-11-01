@@ -5,14 +5,11 @@ import (
 
 	"contactsAI/contacts/internal/db"
 
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Env struct {
 	*db.Queries
-
-	CookieStore cookie.Store
 }
 
 // NewEnv Create a new Env instance.

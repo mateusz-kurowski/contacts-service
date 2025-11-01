@@ -6,7 +6,6 @@ import (
 
 	"contactsAI/contacts/internal/config"
 	"contactsAI/contacts/internal/db"
-	"contactsAI/contacts/internal/routeutils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -99,7 +98,7 @@ func GetContacts(c *gin.Context, env *config.Env) {
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/contacts/{id} [get]
 func GetContactByID(c *gin.Context, env *config.Env) {
-	contactID, err := routeutils.GetInt32FromPath(c, "id")
+	contactID, err := getIntFromPath(c, "id")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, NewErrorResponse("Invalid contact ID"))
 		return
@@ -139,7 +138,7 @@ type UpdateContactBody struct {
 //	@Failure		500		{object}	ErrorResponse
 //	@Router			/contacts/{id} [put]
 func UpdateContact(c *gin.Context, env *config.Env) {
-	contactID, parseErr := routeutils.GetInt32FromPath(c, "id")
+	contactID, parseErr := getIntFromPath(c, "id")
 	if parseErr != nil {
 		c.JSON(http.StatusBadRequest, NewErrorResponse("Invalid contact ID"))
 		return
@@ -179,7 +178,7 @@ func UpdateContact(c *gin.Context, env *config.Env) {
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/contacts/{id} [delete]
 func DeleteContact(c *gin.Context, env *config.Env) {
-	id, err := routeutils.GetInt32FromPath(c, "id")
+	id, err := getIntFromPath(c, "id")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, NewErrorResponse("Invalid contact ID"))
 		return
