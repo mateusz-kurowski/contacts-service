@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"strconv"
 
 	"contactsAI/contacts/internal/config"
 	"contactsAI/contacts/internal/db"
@@ -17,6 +20,8 @@ func RegisterContactsRoutes(router *gin.RouterGroup, env *config.Env) {
 	apiGroup.GET("/:id", func(c *gin.Context) { GetContactByID(c, env) })
 	apiGroup.POST("/", func(c *gin.Context) { CreateContact(c, env) })
 	apiGroup.PUT("/:id", func(c *gin.Context) { UpdateContact(c, env) })
+	apiGroup.PUT("/:id/avatar", func(c *gin.Context) { UploadContactAvatar(c, env) })
+	apiGroup.GET("/:id/avatar", func(c *gin.Context) { DownloadContactAvatar(c, env) })
 	apiGroup.DELETE("/:id", func(c *gin.Context) { DeleteContact(c, env) })
 }
 
@@ -64,7 +69,7 @@ func CreateContact(c *gin.Context, env *config.Env) {
 //	@Tags			contacts
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	[]ContactResponse
+//	@Success		200	{array}		ContactResponse
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/contacts [get]
 func GetContacts(c *gin.Context, env *config.Env) {
@@ -164,6 +169,107 @@ func UpdateContact(c *gin.Context, env *config.Env) {
 	c.JSON(http.StatusOK, dto)
 }
 
+const (
+	BytesPerKB = 1024
+	KBPerMB    = 1024
+	MaxMBSize  = 10
+)
+
+const maxAvatarSize = int64(MaxMBSize * KBPerMB * BytesPerKB) // 10 MiB
+
+// UploadContactAvatar godoc
+//
+//	@Summary		Upload contact avatar
+//	@Description	Upload an avatar image for a contact by ID
+//	@Tags			contacts
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			id		path		int		true	"Contact ID"
+//	@Param			avatar	formData	file	true	"Avatar file"
+//	@Success		200		{object}	map[string]string
+//	@Failure		400		{object}	ErrorResponse
+//	@Failure		500		{object}	ErrorResponse
+//	@Router			/contacts/{id}/avatar [put]
+func UploadContactAvatar(c *gin.Context, env *config.Env) {
+	avatar, err := c.FormFile("avatar")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, NewErrorResponse("Invalid avatar file provided"))
+		return
+	}
+	if avatar.Size == 0 {
+		c.JSON(http.StatusBadRequest, NewErrorResponse("Avatar file is empty"))
+		return
+	}
+	if avatar.Size > maxAvatarSize {
+		c.JSON(http.StatusBadRequest, NewErrorResponse(fmt.Sprintf("Avatar size cannot exceed %dMB", MaxMBSize)))
+		return
+	}
+
+	f, err := avatar.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, NewErrorResponse("Failed to process avatar file"))
+		return
+	}
+	defer f.Close()
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, NewErrorResponse("Failed to read avatar file"))
+		return
+	}
+
+	key := "test" // TODO: make unique per contact
+	contentType := avatar.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+
+	if err = env.Bucket.Upload(c.Request.Context(), key, data, contentType); err != nil {
+		c.JSON(http.StatusInternalServerError, NewErrorResponse("Could not upload avatar"))
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Avatar uploaded"})
+}
+
+// DownloadContactAvatar godoc
+//
+//	@Summary		Download contact's avatar
+//	@Description	Streams a contact's avatar by contact ID
+//	@Tags			contacts
+//	@Produce		octet-stream
+//	@Param			id	path		int		true	"Contact ID"
+//	@Success		200	{file}		file	"The avatar file stream"
+//	@Failure		404	{object}	ErrorResponse
+//	@Failure		500	{object}	ErrorResponse
+//	@Router			/contacts/{id}/avatar [get]
+func DownloadContactAvatar(c *gin.Context, env *config.Env) {
+	objectKey := c.Param("id")
+
+	s3Object, err := env.Bucket.GetStream(c.Request.Context(), objectKey)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Avatar not found."})
+		return
+	}
+	defer s3Object.Body.Close()
+
+	if s3Object.ContentType != nil {
+		c.Header("Content-Type", *s3Object.ContentType)
+	} else {
+		c.Header("Content-Type", "application/octet-stream")
+	}
+
+	if s3Object.ContentLength != nil {
+		c.Header("Content-Length", strconv.FormatInt(*s3Object.ContentLength, 10))
+	}
+
+	c.Header("Content-Disposition", "inline")
+
+	_, err = io.Copy(c.Writer, s3Object.Body)
+	if err != nil {
+		env.Logger.Error("Error streaming file to client", "error", err)
+	}
+}
+
 // DeleteContact godoc
 //
 //	@Summary		Delete contact
@@ -171,8 +277,8 @@ func UpdateContact(c *gin.Context, env *config.Env) {
 //	@Tags			contacts
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path	int	true	"Contact ID"
-//	@Success		204	"No Content"
+//	@Param			id	path		int		true	"Contact ID"
+//	@Success		204	{string}	string	"No Content"
 //	@Failure		400	{object}	ErrorResponse
 //	@Failure		404	{object}	ErrorResponse
 //	@Failure		500	{object}	ErrorResponse

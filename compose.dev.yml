@@ -21,6 +21,6 @@ services:
     env_file:
       - env/.env
     ports:
-      - "33500:${PORT}"
+      - "33500:33500"
 volumes:
   contacts_db_data:

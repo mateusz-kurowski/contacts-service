@@ -17,12 +17,12 @@ func SetupRouter(env *config.Env) *gin.Engine {
 	validation.SetupValidation()
 	// Register routes so callers that only call SetupRouter
 	// (for example tests) get a router with all endpoints wired.
-	RegisterRoutes(router, env)
+	registerRoutes(router, env)
 
 	return router
 }
 
-func RegisterRoutes(router *gin.Engine, env *config.Env) {
+func registerRoutes(router *gin.Engine, env *config.Env) {
 	apiGroup := router.Group("/api")
 
 	// Register routes

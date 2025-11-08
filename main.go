@@ -29,8 +29,14 @@ func main() {
 	}
 
 	env, connErr := config.NewEnv(os.Getenv("DB_URL"))
+	if env.Logger == nil {
+		log.Println("Failed to setup logger.")
+	}
 	if connErr != nil || env.Queries == nil {
-		log.Fatalf("Failed to initialize database: %v", connErr)
+		env.Logger.Error("Failed to initialize environment", "error", connErr)
+	}
+	if env.Bucket == nil {
+		env.Logger.Error("Failed to initialize s3 connection", "error", connErr)
 	}
 
 	router := routing.SetupRouter(env)
@@ -42,6 +48,6 @@ func main() {
 	// PORT is set via environment variable
 	// Default to 8080 if not set
 	if runErr := router.Run(); runErr != nil {
-		log.Fatalf("Failed to start server: %v", runErr)
+		env.Logger.Error("Failed to start server", "error", runErr)
 	}
 }

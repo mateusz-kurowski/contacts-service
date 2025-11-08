@@ -2,7 +2,9 @@ package config
 
 import (
 	"context"
+	"log/slog"
 
+	"contactsAI/contacts/internal/bucket"
 	"contactsAI/contacts/internal/db"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -10,6 +12,9 @@ import (
 
 type Env struct {
 	*db.Queries
+	*slog.Logger
+
+	Bucket *bucket.Store
 }
 
 // NewEnv Create a new Env instance.
@@ -24,6 +29,10 @@ func NewEnv(dbURL string) (*Env, error) {
 	if pingErr := conn.Ping(ctx); pingErr != nil {
 		return nil, pingErr
 	}
-
-	return &Env{Queries: db.New(conn)}, nil
+	bucket, err := bucket.OpenFromEnv(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logger := slog.Default()
+	return &Env{Queries: db.New(conn), Bucket: bucket, Logger: logger}, nil
 }

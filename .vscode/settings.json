@@ -9,5 +9,9 @@
 	"go.useLanguageServer": true,
 	"gopls": {
 		"formatting.gofumpt": true
+	},
+	"sonarlint.connectedMode.project": {
+		"connectionId": "mateusz-kurowski",
+		"projectKey": "mateusz-kurowski_contacts-service"
 	}
 }

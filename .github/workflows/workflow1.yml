@@ -19,6 +19,11 @@ jobs:
         with:
           version: v2.5
 
+  vulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - id: govulncheck
+        uses: golang/govulncheck-action@v1
   sonar_qube:
     runs-on: ubuntu-latest
     steps:

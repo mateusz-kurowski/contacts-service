@@ -25,6 +25,6 @@ FROM scratch
 
 COPY --from=builder /app/contactsService /contactsService
 
-EXPOSE 8080
+EXPOSE 33500
 
 ENTRYPOINT ["/contactsService"]
