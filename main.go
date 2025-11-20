@@ -28,7 +28,7 @@ func main() {
 		}
 	}
 
-	env, connErr := config.NewEnv(os.Getenv("DB_URL"))
+	env, connErr := config.NewEnv(os.Getenv("DB_URL"), false)
 	if env.Logger == nil {
 		log.Println("Failed to setup logger.")
 	}

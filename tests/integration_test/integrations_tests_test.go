@@ -29,7 +29,7 @@ func setupSuite(t *testing.T) (*gin.Engine, func(t *testing.T)) {
 	dbURL, err := dbContainer.ConnectionString(ctx, "sslmode=disable")
 	require.NoError(t, err, "failed to get conn string")
 
-	env, err := config.NewEnv(dbURL)
+	env, err := config.NewEnv(dbURL, true)
 	require.NoError(t, err, "db connection failed")
 
 	router := routing.SetupRouter(env)

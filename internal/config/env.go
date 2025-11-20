@@ -18,21 +18,28 @@ type Env struct {
 }
 
 // NewEnv Create a new Env instance.
-func NewEnv(dbURL string) (*Env, error) {
+func NewEnv(dbURL string, isTestEnv bool) (*Env, error) {
 	ctx := context.Background()
 	conn, connErr := pgxpool.New(ctx, dbURL)
 	if connErr != nil {
 		return nil, connErr
 	}
 
+	//nolint:exhaustruct // necessary because of bucket's conditional occurrence
+	env := Env{Logger: slog.Default()}
+
 	// Test the connection
 	if pingErr := conn.Ping(ctx); pingErr != nil {
 		return nil, pingErr
 	}
-	bucket, err := bucket.OpenFromEnv(ctx)
-	if err != nil {
-		return nil, err
+	env.Queries = db.New(conn)
+
+	if !isTestEnv {
+		bucket, err := bucket.OpenFromEnv(ctx)
+		if err != nil {
+			return nil, err
+		}
+		env.Bucket = bucket
 	}
-	logger := slog.Default()
-	return &Env{Queries: db.New(conn), Bucket: bucket, Logger: logger}, nil
+	return &env, nil
 }
