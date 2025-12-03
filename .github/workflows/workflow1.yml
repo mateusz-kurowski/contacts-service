@@ -40,22 +40,6 @@ jobs:
           name: coverage
           path: coverage.out
           if-no-files-found: error
-
-  tests:
-    needs: test
-    runs-on: ubuntu-latest
-    env:
-      GO111MODULE: on
-    steps:
-      - uses: actions/checkout@v6
-      - name: Download coverage artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage
-      - name: Security Scan
-        uses: securego/gosec@master
-        with:
-          args: ./...
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
@@ -63,7 +47,17 @@ jobs:
           files: ./coverage.out
           fail_ci_if_error: true
           verbose: true
-
+  tests:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - uses: actions/checkout@v6
+      - name: Security Scan
+        uses: securego/gosec@master
+        with:
+          args: ./...
   sonar_qube:
     needs: test
     runs-on: ubuntu-latest
