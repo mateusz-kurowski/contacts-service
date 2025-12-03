@@ -18,6 +18,8 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.6
+        env:
+          GOFLAGS: "-buildvcs=false"
 
   vulncheck:
     runs-on: ubuntu-latest
