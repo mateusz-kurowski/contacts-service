@@ -15,9 +15,9 @@ jobs:
     steps:
       - uses: mateusz-kurowski/setup-go-env-action-composite@main
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.5
+          version: v2.6
 
   vulncheck:
     runs-on: ubuntu-latest
@@ -27,26 +27,62 @@ jobs:
         with:
           go-version-input: 1.25
           go-package: ./...
-  sonar_qube:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # Disabling shallow clones is recommended for improving the relevancy of reporting
-          fetch-depth: 0
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6.0.0
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
+          repo-checkout: true
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: mateusz-kurowski/setup-go-env-action-composite@main
       - name: Run tests
-        run: go test ./...
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage
+          path: coverage.out
+          if-no-files-found: error
+
+  tests:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+      - name: Security Scan
+        uses: securego/gosec@master
+        with:
+          args: ./...
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.out
+          fail_ci_if_error: true
+          verbose: true
+
+  sonar_qube:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Disabling shallow clones is recommended for improving the relevancy of reporting
+          fetch-depth: 0
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   integration-test:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: mateusz-kurowski/setup-go-env-action-composite@main
@@ -54,6 +90,7 @@ jobs:
         run: go test -tags=integration -v ./...
 
   build:
+    needs: [lint, vulncheck, tests, sonar_qube, integration-test]
     runs-on: ubuntu-latest
     steps:
       - uses: mateusz-kurowski/setup-go-env-action-composite@main
@@ -61,11 +98,9 @@ jobs:
         run: go get .
       - name: Build
         run: go build -v -o contacts-service
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
-          # Name of the artifact to upload.
           name: "contacts-service"
-          # A file, directory or wildcard pattern that describes what to upload
           path: "contacts-service"
           if-no-files-found: error
           retention-days: 30
